@@ -20,6 +20,23 @@ export default function App(){
  const demo=!supabase;
  useEffect(()=>{if(!supabase){setAuthLoading(false);return;}supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthLoading(false)});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[]);
  useEffect(()=>{if(session)loadData()},[session]);
+ useEffect(() => {
+  if (!supabase || !session) return;
+
+  const channel = supabase
+    .channel('clinic-live-sync')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => loadData())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => loadData())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'consultations' }, () => loadData())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => loadData())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attachments' }, () => loadData())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => loadData())
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [session]);
  async function loadData(){if(!supabase||!session)return;setLoading(true);setError('');try{const [p,a,c,b]=await Promise.all([supabase.from('patients').select('*').order('created_at',{ascending:false}),supabase.from('appointments').select('*, patients(first_name,last_name)').order('appointment_date'),supabase.from('consultations').select('*').order('consultation_date',{ascending:false}),supabase.from('payments').select('*').order('payment_date',{ascending:false})]);for(const r of [p,a,c,b])if(r.error)throw r.error;setPatients(p.data||[]);setAppointments(a.data||[]);setConsultations(c.data||[]);setPayments(b.data||[])}catch(e){setError(e.message||'Erreur de chargement')}finally{setLoading(false)}}
  async function signIn(e){e.preventDefault();const {error}=await supabase.auth.signInWithPassword({email,password});if(error)setError(error.message)}
  async function signOut(){await supabase.auth.signOut();setSession(null)}
