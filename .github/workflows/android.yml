@@ -1,3 +1,4 @@
+
 name: Build ORL Android APK
 
 on:
@@ -36,6 +37,9 @@ jobs:
 
       - name: Create Android project
         run: npx cap add android
+
+      - name: Generate clinic app icons
+        run: npx capacitor-assets generate --android
 
       - name: Sync Android
         run: npx cap sync android
