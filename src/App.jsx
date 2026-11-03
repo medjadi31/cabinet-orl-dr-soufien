@@ -367,7 +367,11 @@ export default function App() {
     return (
       <div className="login-wrap">
         <form className="login-card" onSubmit={signIn}>
-          <div className="brand-mark"><Stethoscope size={28}/></div>
+          <img
+  src="/clinic-logo-1024.png"
+  alt="Logo Cabinet ORL"
+  className="clinic-logo login-logo"
+/>
           <p className="eyebrow">ESPACE PROFESSIONNEL</p>
           <h1>CABINET ORL</h1>
           <h2>Dr M. SOUFIEN</h2>
@@ -392,7 +396,11 @@ export default function App() {
     <div className="app-shell">
       <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
         <div className="brand">
-          <div className="brand-mark"><Stethoscope size={25}/></div>
+          <img
+  src="/clinic-logo-1024.png"
+  alt="Logo Cabinet ORL"
+  className="clinic-logo"
+/>
           <div><b>CABINET ORL</b><span>Dr M. SOUFIEN</span></div>
           <button className="close-nav" onClick={() => setMobileNav(false)}><X/></button>
         </div>
