@@ -2,7 +2,8 @@
   "name": "cabinet-orl-dr-soufien",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
+"main": "electron/main.cjs",
+"type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
