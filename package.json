@@ -1,4 +1,3 @@
-
 {
   "name": "cabinet-orl-dr-soufien",
   "private": true,
@@ -10,7 +9,9 @@
     "preview": "vite preview --host 0.0.0.0",
     "cap:add": "cap add android",
     "cap:sync": "cap sync android",
-    "assets:generate": "capacitor-assets generate --android"
+    "assets:generate": "capacitor-assets generate --android",
+    "desktop:dev": "npm run build && electron .",
+    "desktop:build": "npm run build && electron-builder --win nsis --x64"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",
@@ -24,6 +25,39 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^6.2.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "dz.drsoufien.cabinetorl",
+    "productName": "CABINET ORL - Dr M. SOUFIEN",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CABINET ORL - Dr M. SOUFIEN"
+    }
   }
 }
