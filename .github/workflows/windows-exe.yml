@@ -2,6 +2,9 @@
 name: Build CABINET ORL Windows EXE
 
 on:
+  push:
+    branches:
+      - windows-exe
   workflow_dispatch:
 
 permissions:
