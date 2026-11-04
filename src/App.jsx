@@ -627,7 +627,7 @@ export default function App() {
           <img src={clinicLogo} alt="Logo Cabinet ORL" className="clinic-logo login-logo" />
           <p className="eyebrow">ESPACE PROFESSIONNEL</p>
           <h1>CABINET ORL</h1>
-          <h2>Dr M. SOUFIEN</h2>
+          <h2>Dr M. SOFIANE</h2>
           <p className="muted">Connectez-vous à votre espace médical.</p>
           {error && <div className="error">{error}</div>}
           <label>Email professionnel
@@ -648,7 +648,7 @@ export default function App() {
       <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
         <div className="brand">
           <img src={clinicLogo} alt="Logo Cabinet ORL" className="clinic-logo" />
-          <div><b>CABINET ORL</b><span>Dr M. SOUFIEN</span></div>
+          <div><b>CABINET ORL</b><span>Dr M. SOFIANE</span></div>
           <button className="close-nav" onClick={() => setMobileNav(false)}><X /></button>
         </div>
         <div className="side-label">MENU PRINCIPAL</div>
@@ -799,10 +799,10 @@ export default function App() {
 
           {section === 'settings' && <>
             <PageHeading title="Paramètres" desc="Configuration du cabinet." />
-            <section className="panel"><h3>Informations du cabinet</h3><p>Cabinet ORL — Dr M. SOUFIEN</p><p>Devise utilisée : Dinar algérien (DA)</p></section>
+            <section className="panel"><h3>Informations du cabinet</h3><p>Cabinet ORL — Dr M. SOFIANE</p><p>Devise utilisée : Dinar algérien (DA)</p></section>
           </>}
 
-          <footer>© {new Date().getFullYear()} CABINET ORL — Dr M. SOUFIEN • Espace médical confidentiel</footer>
+          <footer>© {new Date().getFullYear()} CABINET ORL — Dr M. SOFIANE • Espace médical confidentiel</footer>
         </div>
       </main>
 

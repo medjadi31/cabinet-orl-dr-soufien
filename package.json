@@ -2,7 +2,6 @@
   "name": "cabinet-orl-dr-soufien",
   "private": true,
   "version": "1.0.0",
-  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -12,7 +11,7 @@
     "cap:sync": "cap sync android",
     "assets:generate": "capacitor-assets generate --android",
     "desktop:dev": "npm run build && electron .",
-    "desktop:build": "npm run build && electron-builder --win nsis --x64 --publish never"
+    "desktop:build": "npm run build && electron-builder --win nsis --x64"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",
@@ -32,7 +31,7 @@
   },
   "build": {
     "appId": "dz.drsoufien.cabinetorl",
-    "productName": "CABINET ORL - Dr M. SOUFIEN",
+    "productName": "CABINET ORL - Dr M. SOFIANE",
     "directories": {
       "output": "release"
     },
@@ -58,7 +57,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CABINET ORL - Dr M. SOUFIEN"
+      "shortcutName": "CABINET ORL - Dr M. SOFIANE"
     }
   }
 }
