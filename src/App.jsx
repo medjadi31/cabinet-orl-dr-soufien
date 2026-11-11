@@ -58,7 +58,7 @@ const emptyPatient = {
   first_name: '',
   last_name: '',
   phone: '',
-  birth_date: '',
+  age: '',
   sex: '',
   address: '',
   notes: ''
@@ -94,6 +94,32 @@ const emptyPayment = {
   payment_date: today(),
   notes: ''
 };
+
+function parsePatientCSV(text) {
+  const firstLine = text.replace(/^\uFEFF/, '').split(/\r?\n/).find(line => line.trim());
+  if (!firstLine) return [];
+  const delimiter = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  const input = text.replace(/^\uFEFF/, '');
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === '"' && quoted && input[i + 1] === '"') { cell += '"'; i++; }
+    else if (ch === '"') quoted = !quoted;
+    else if (ch === delimiter && !quoted) { row.push(cell.trim()); cell = ''; }
+    else if ((ch === '\n' || ch === '\r') && !quoted) {
+      if (ch === '\r' && input[i + 1] === '\n') i++;
+      row.push(cell.trim());
+      if (row.some(value => value !== '')) rows.push(row);
+      row = []; cell = '';
+    } else cell += ch;
+  }
+  row.push(cell.trim());
+  if (row.some(value => value !== '')) rows.push(row);
+  if (rows.length < 2) return [];
+  const headers = rows.shift().map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]/g, '_'));
+  return rows.map(values => Object.fromEntries(headers.map((h, i) => [h, values[i] || ''])));
+}
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -330,7 +356,7 @@ export default function App() {
       first_name: selectedPatient.first_name || '',
       last_name: selectedPatient.last_name || '',
       phone: selectedPatient.phone || '',
-      birth_date: selectedPatient.birth_date || '',
+      age: selectedPatient.age ?? '',
       sex: selectedPatient.sex || '',
       address: selectedPatient.address || '',
       notes: selectedPatient.notes || ''
@@ -453,6 +479,60 @@ export default function App() {
 
     } catch (e) {
       setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // IMPORTER UNE LISTE CSV DE PATIENTS
+  async function importPatientsFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!supabase || !session) {
+      setError('Connectez-vous à Supabase pour importer les patients.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      const rows = parsePatientCSV(await file.text());
+      if (!rows.length) throw new Error('Le fichier est vide ou son format CSV est incorrect.');
+      let added = 0, skipped = 0;
+      const { data: existing, error: readError } = await supabase.from('patients').select('id,first_name,last_name,phone');
+      if (readError) throw readError;
+      const normalize = value => String(value || '').trim().toLocaleLowerCase('fr').replace(/\s+/g, ' ');
+      for (const row of rows) {
+        const first = (row.first_name || row.prenom || row.pr_nom || '').trim();
+        const last = (row.last_name || row.nom || '').trim();
+        if (!first || !last) { skipped++; continue; }
+        const phone = (row.phone || row.telephone || '').trim();
+        const duplicate = (existing || []).some(p =>
+          normalize(p.first_name) === normalize(first) &&
+          normalize(p.last_name) === normalize(last) &&
+          (!phone || !p.phone || normalize(p.phone) === normalize(phone))
+        );
+        if (duplicate) { skipped++; continue; }
+        const sexValue = String(row.sex || row.sexe || '').trim().toUpperCase();
+        const patient = {
+          first_name: first,
+          last_name: last,
+          phone: phone || null,
+          age: row.age || row.age_ans ? Number(row.age || row.age_ans) : null,
+          sex: ['F', 'FEMME', 'FÉMININ', 'FEMININ'].includes(sexValue) ? 'F' : ['M', 'H', 'HOMME', 'MASCULIN'].includes(sexValue) ? 'M' : null,
+          address: (row.address || row.adresse || '').trim() || null,
+          notes: (row.notes || row.remarques || '').trim() || null
+        };
+        const { error: insertError } = await supabase.from('patients').insert(patient);
+        if (insertError) throw insertError;
+        existing.push(patient);
+        added++;
+      }
+      await loadData();
+      setNotice(`Import terminé : ${added} patient(s) ajouté(s), ${skipped} ligne(s) ignorée(s) (doublon ou données manquantes).`);
+    } catch (err) {
+      setError(err.message || 'Échec de l’importation.');
     } finally {
       setSaving(false);
     }
@@ -704,7 +784,9 @@ export default function App() {
             <PageHeading title="Patients" desc="Consultez et gérez les dossiers des patients." action="Nouveau patient" onClick={() => setShowPatient(true)} />
             <section className="panel"><div className="toolbar"><div className="searchbox"><Search size={17} />
               <input placeholder="Rechercher par nom ou téléphone…" value={query} onChange={e => setQuery(e.target.value)} /></div>
-              <span className="muted">{filtered.length} patient(s)</span></div>
+              <div className="patient-tools"><span className="muted">{filtered.length} patient(s)</span>
+                <label className="secondary import-label">Importer CSV<input type="file" accept=".csv,text/csv" onChange={importPatientsFile} disabled={saving} /></label>
+              </div></div>
               <PatientTable patients={filtered} onSelect={openPatient} /></section>
           </>}
 
@@ -845,15 +927,8 @@ export default function App() {
               />
             </Field>
 
-            <Field label="Date de naissance">
-              <input
-                type="date"
-                value={patientForm.birth_date}
-                onChange={e => setPatientForm({
-                  ...patientForm,
-                  birth_date: e.target.value
-                })}
-              />
+            <Field label="Âge (ans)">
+              <input type="number" min="0" max="120" step="1" inputMode="numeric" value={patientForm.age} onChange={e => setPatientForm({ ...patientForm, age: e.target.value })} placeholder="Ex. : 35" />
             </Field>
 
             <Field label="Sexe">
@@ -1437,15 +1512,8 @@ export default function App() {
                 />
               </Field>
 
-              <Field label="Date de naissance">
-                <input
-                  type="date"
-                  value={patientForm.birth_date}
-                  onChange={e => setPatientForm({
-                    ...patientForm,
-                    birth_date: e.target.value
-                  })}
-                />
+              <Field label="Âge (ans)">
+                <input type="number" min="0" max="120" step="1" inputMode="numeric" value={patientForm.age} onChange={e => setPatientForm({ ...patientForm, age: e.target.value })} placeholder="Ex. : 35" />
               </Field>
 
               <Field label="Sexe">
@@ -1509,8 +1577,8 @@ export default function App() {
               <p>{selectedPatient.phone || 'Téléphone non renseigné'}</p>
 
               <div className="detail-row">
-                <span>Date de naissance</span>
-                <b>{selectedPatient.birth_date || '—'}</b>
+                <span>Âge</span>
+                <b>{selectedPatient.age !== null && selectedPatient.age !== undefined && selectedPatient.age !== '' ? `${selectedPatient.age} ans` : '—'}</b>
               </div>
 
               <div className="detail-row">
@@ -1615,7 +1683,7 @@ export default function App() {
             <div className="prescription-meta">
               <div><b>Date :</b> {new Date(printingPrescription.created_at || Date.now()).toLocaleDateString('fr-FR')}</div>
               <div><b>Nom et Prénom :</b> {printingPrescription.patient ? `${printingPrescription.patient.last_name} ${printingPrescription.patient.first_name}` : patientName(printingPrescription.patient_id)}</div>
-              <div><b>Âge :</b> {printingPrescription.patient?.birth_date ? `${Math.floor((Date.now() - new Date(printingPrescription.patient.birth_date).getTime()) / 31557600000)} ans` : '—'}</div>
+              <div><b>Âge :</b> {printingPrescription.patient?.age !== null && printingPrescription.patient?.age !== undefined ? `${printingPrescription.patient.age} ans` : '—'}</div>
             </div>
             <div className="prescription-title">Ordonnance</div>
             <div className="prescription-content">{printingPrescription.content}</div>
@@ -1761,7 +1829,7 @@ function PatientTable({ patients, onSelect }) {
           <tr>
             <th>Patient</th>
             <th>Téléphone</th>
-            <th>Date de naissance</th>
+            <th>Âge</th>
             <th>Sexe</th>
             <th></th>
           </tr>
@@ -1782,7 +1850,7 @@ function PatientTable({ patients, onSelect }) {
                 </div>
               </td>
               <td>{p.phone || '—'}</td>
-              <td>{p.birth_date || '—'}</td>
+              <td>{p.age !== null && p.age !== undefined && p.age !== '' ? `${p.age} ans` : '—'}</td>
               <td>
                 {p.sex === 'F'
                   ? 'Féminin'
