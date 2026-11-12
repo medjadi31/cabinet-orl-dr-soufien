@@ -1,3 +1,4 @@
+
 {
   "name": "cabinet-orl-dr-soufien",
   "private": true,
@@ -47,8 +48,7 @@
         {
           "target": "nsis",
           "arch": [
-  "ia32"
-]
+            "ia32"
           ]
         }
       ]
@@ -59,7 +59,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CABINET ORL - Dr M. SOFIANE"
+      "shortcutName": "CABINET ORL - Dr M. SOUFiane"
     }
   }
 }
